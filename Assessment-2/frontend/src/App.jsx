@@ -1,100 +1,174 @@
-import { useState,useEffect } from 'react'
+import { useState, useEffect, useRef } from "react";
+import "./App.css";
+
+function App(){
+
+const [count , setCount] = useState(10)
+const [error , setError] = useState("")
+const [articles,setArticles] = useState([]);
+const [loading,setLoading] = useState(false);
+const [reading ,  setReading] = useState(false)
+const [selected , setSelected] = useState(null)
+const timerRef = useRef(null)
+const prevCall = useRef(0)
 
 
-function App() {
+function fetchNews(query=""){
+     setLoading(true);
 
-  const [error , setError] = useState("")
-  const [loading , setLoading] = useState(false);
-  const [cards , setCards] = useState([])
-  const [countDown, setCountDown] = useState(10);
-  const [moreArticles , setMoreArticles] = useState(true);
-  const [page , setPage] = useState(1);
-
-
-     function fetchFunc() {
-
-
-              if(!moreArticles) return;
-              setLoading(true)
-              fetch(`https://newsapi.org/v2/everything?q=india&apiKey=1a43fa70a7064ced9dc6d60fafa0d025&page=${page}&pageSize=10`)
-              .then(res => res.json())
-              .then(data => {
-                   setCards(data.articles);
-                   setLoading(false);
-                   console.log(data.articles);
-              })
-              .catch(err => {
-                 setLoading(false)
-                 setError("error find");
-             })
-     }
-
-
-
-
-
-   useEffect(() => {
-       fetchFunc()
-
-       let timer = setInterval(() => {
-
-           setCountDown(prev => {
-              if(prev == 1){
-                 fetchFunc();
-                 return 10;
-              }
-
-              return prev - 1;
-           })
-       },1000)
-
-       return () => clearInterval(timer);
-
-   },[])
-
-
-
-   function searchFun(){
-
-   }
-
-
-//
-//   function searchFunc(){
-//
-//   }
-
-    if(loading){
-       return <h2 style={{ textAlign: "center" }}>Loading...</h2>;
-    }
-
-
-
-
-  return (
-    <>
-
-      <h1 style={{textAlign : "center" , color:"pink"}}>Welcome to News Page</h1>
-      <p>{countDown}</p>
-
-
-      {error ? (
-        <p>{error}</p>
-      ) : (
-
-        cards.map((card, id) => (
-          <div key={id}>
-            <h3>{card.title}</h3>
-            <img src={card.urlToImage} width="200" />
-            <p>{card.description}</p>
-            <p>{card.publishedAt}</p>
-            <a href={card.url} target="_blank"> Read Full Article </a>
-          </div>
-        ))
-      )}
-
-    </>
-  )
+     fetch(`https://api.spaceflightnewsapi.net/v4/articles/?limit=10&search=${query}`)
+    .then(res=>res.json())
+     .then(data=>{
+        setArticles(data.results);
+        setLoading(false);
+     })
+      .catch(()=>{
+         setError("Error loading news");
+         setLoading(false);
+      });
 }
 
-export default App
+
+useEffect(() => {
+
+        fetchNews();
+
+        const timer = setInterval(() => {
+
+        setCount((prev) => {
+
+              if (prev === 1) {
+                fetchNews();
+                return 10;
+              }
+              return prev - 1;
+        });
+
+      }, 1000);
+      return () => clearInterval(timer);
+
+}, []);
+
+
+
+
+function searchFunc(e){
+      let now = Date.now();
+      if(now - prevCall.current < 800){
+         return
+      }
+      prevCall.current = now
+      searchQuery(e)
+}
+
+
+
+function searchQuery(query){
+
+     fetch(`https://api.spaceflightnewsapi.net/v4/articles/?search=${query}`)
+     .then(res => res.json())
+     .then(data => {
+        setArticles(data.results);
+     })
+     .catch(() => {
+         setError("find error while searching");
+     })
+
+}
+
+
+
+function resetTimer(){
+
+        setReading(false)
+
+        clearTimeout(timerRef.current)
+
+        timerRef.current = setTimeout(() => {
+
+           setReading(true)
+
+        },5000)
+
+}
+
+
+
+useEffect(()=>{
+
+         if(selected){
+
+              timerRef.current=setTimeout(()=>{
+
+               setReading(true)
+
+              },5000)
+
+        }
+
+        return ()=>clearTimeout(timerRef.current)
+
+},[selected])
+
+
+
+return (
+
+     <div className="container">
+
+           <div className="sidebar">
+               <h3>Categories</h3>
+               <button>Tech</button>
+               <button>Science</button>
+               <button>Space</button>
+               <button>countries</button>
+               <button>religious</button>
+           </div>
+
+
+           <div className="feed">
+
+               <h1>News Paper</h1>
+               <p>Refreshing in {count}s...</p>
+               <input placeholder="search news" onChange={(e) => searchFunc(e.target.value)}/>
+
+               {articles.map((item ,index) => (
+
+                 <div key={index} className="card" onClick={() => setSelected(item)}>
+                     <img src={item.image_url} alt=""/>
+                     <div style={{display:"flex" , flexDirection:"column"}}>
+                        <h3>{item.title}</h3>
+                        <h3>{item.news_site}</h3>
+                        <p>{new Date(item.published_at).toLocaleString()}</p>
+                     </div>
+                 </div>
+               ))}
+
+               {loading && <p className="loading">Loading...</p>}
+               {error && <p>{error}</p>}
+
+           </div>
+
+
+           {selected && (
+
+               <div className="modal">
+
+                   <div className="modal-content" onMouseMove={resetTimer} onScroll={resetTimer}>
+                        <button onClick={()=> setSelected(null)}>close</button>
+                        <h2>{selected.title}</h2>
+                        <img src={selected.image_url} width="300"/>
+                        <p>{selected.summary}</p>
+                        <a href={selected.url} target="_blank" rel="noreferrer">read full article</a>
+                        {reading && <p className="reading">Still reading?</p>}
+                    </div>
+               </div>
+           )}
+     </div>
+
+)}
+
+export default App;
+
+
+
