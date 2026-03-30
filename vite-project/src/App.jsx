@@ -19,10 +19,6 @@ function App() {
   const limitedData = products.slice(start, start + 5);
 
 
-  function handleCount(ProductId){
-
-  }
-
   function handlePrev() {
     if (currPage > 1) {
       setCurrPage(prev => prev - 1);
