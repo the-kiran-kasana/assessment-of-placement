@@ -12,12 +12,12 @@
 //
 //
 //getFunc(13 , tableFun)
-
-
-let arr = [1,2,3,4];
-
-let double = arr.map((num) => {
-    return 2*num;
-},2)
-
-console.log(double);
+//
+//
+//let arr = [1,2,3,4];
+//
+//let double = arr.map((num) => {
+//    return 2*num;
+//},2)
+//
+//console.log(double);
